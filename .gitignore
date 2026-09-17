@@ -35,3 +35,6 @@ build/
 # Environment / local configuration
 .env
 application-local.properties
+
+# Database backup
+employee_helpdesk_backup.dump

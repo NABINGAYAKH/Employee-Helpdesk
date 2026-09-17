@@ -151,4 +151,6 @@ public class AiService {
         return "AI analysis rejected for ticket: " + ticketId;
     }
 
+
+
 }

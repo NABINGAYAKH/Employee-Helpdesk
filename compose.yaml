@@ -1,0 +1,35 @@
+services:
+
+  postgres:
+    image: postgres:18
+    container_name: postgres
+    environment:
+      POSTGRES_DB: employee_helpdesk
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - helpdesk-db-data:/var/lib/postgresql
+    ports:
+      - "5433:5432"
+    networks:
+      - helpdesk-network
+
+  employee-helpdesk:
+    build: .
+    container_name: employee-helpdesk-container
+    ports:
+      - "8081:8081"
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - postgres
+    networks:
+      - helpdesk-network
+
+volumes:
+  helpdesk-db-data:
+    external: true
+
+networks:
+  helpdesk-network:
