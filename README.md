@@ -2,7 +2,7 @@
 
 A backend REST API for managing employee IT support tickets, authentication, support agents, ticket workflows, and AI-assisted ticket analysis.
 
-The system is designed around a helpdesk workflow where employees can create support tickets, support agents can manage them, and AI-assisted analysis can provide a category, priority, summary, and suggested solution for human review.
+The system follows a helpdesk workflow where employees can create support tickets, support agents can manage them, and AI-assisted analysis provides ticket classification and recommendations for human review.
 
 ## Features
 
@@ -11,31 +11,39 @@ The system is designed around a helpdesk workflow where employees can create sup
 * IT ticket creation and management
 * Ticket status lifecycle:
 
-    * `OPEN`
-    * `IN_PROGRESS`
-    * `RESOLVED`
-    * `CLOSED`
+  * `OPEN`
+  * `IN_PROGRESS`
+  * `RESOLVED`
+  * `CLOSED`
 * Ticket priority levels:
 
-    * `LOW`
-    * `MEDIUM`
-    * `HIGH`
-    * `CRITICAL`
+  * `LOW`
+  * `MEDIUM`
+  * `HIGH`
+  * `CRITICAL`
 * Ticket filtering by status and priority
 * JWT-based authentication
 * BCrypt password hashing
 * Role-based authorization
 * Three user roles:
 
-    * `EMPLOYEE`
-    * `SUPPORT_AGENT`
-    * `ADMIN`
+  * `EMPLOYEE`
+  * `SUPPORT_AGENT`
+  * `ADMIN`
 * Employee ticket ownership validation
 * Global exception handling
 * Jakarta Bean Validation
+* Swagger / OpenAPI API documentation
 * AI-assisted ticket analysis
-* AI recommendation approval/rejection workflow
-* Persistent AI analysis status using PostgreSQL
+* Human approval/rejection workflow for AI recommendations
+* PostgreSQL persistence
+* Automated tests
+* Docker containerization
+* Docker Compose
+* Persistent PostgreSQL Docker volume
+* Environment-based configuration
+
+---
 
 ## AI Ticket Analysis
 
@@ -59,16 +67,14 @@ Example categories include:
 
 ### Human-in-the-loop workflow
 
-AI recommendations are not automatically applied to the ticket.
-
-The workflow is:
+AI recommendations are not automatically applied to tickets.
 
 ```text
 Employee creates ticket
         ↓
 AI analyzes ticket
         ↓
-AI recommendation stored as PENDING
+Recommendation stored as PENDING
         ↓
 Support Agent / Admin reviews recommendation
         ↓
@@ -79,7 +85,9 @@ Support Agent / Admin reviews recommendation
 Apply recommendation  Keep ticket unchanged
 ```
 
-This demonstrates a human-in-the-loop approach where support personnel remain responsible for accepting or rejecting AI recommendations.
+This approach keeps a human responsible for accepting or rejecting an AI recommendation.
+
+---
 
 ## Authentication & Authorization
 
@@ -104,18 +112,22 @@ Client sends JWT with requests
    ↓
 JwtAuthFilter validates token
    ↓
-Request authorized based on role
+Spring Security checks roles
+   ↓
+Request authorized
 ```
 
-### Role-based access
+### User roles
 
-| Role          | Purpose                                              |
-| ------------- | ---------------------------------------------------- |
-| EMPLOYEE      | Create and access permitted employee-level resources |
-| SUPPORT_AGENT | Manage support tickets and review AI recommendations |
-| ADMIN         | Administrative operations and elevated access        |
+| Role            | Purpose                                              |
+| --------------- | ---------------------------------------------------- |
+| `EMPLOYEE`      | Employee-level operations and permitted resources    |
+| `SUPPORT_AGENT` | Manage support tickets and review AI recommendations |
+| `ADMIN`         | Administrative operations and elevated access        |
 
 Protected endpoints are secured using Spring Security role-based authorization.
+
+---
 
 ## Technology Stack
 
@@ -128,37 +140,60 @@ Protected endpoints are secured using Spring Security role-based authorization.
 * Hibernate
 * Spring Security
 * JWT
-* Spring Validation
+* Jakarta Validation
 * Lombok
 
 ### Database
 
 * PostgreSQL
 
-### Development & Testing
+### API Documentation
+
+* Swagger
+* OpenAPI
+
+### Testing
+
+* JUnit
+* Mockito
+* Spring Boot Test
+
+### Development & Tools
 
 * Maven
 * IntelliJ IDEA
 * Postman
-* Git / GitHub
+* Git
+* GitHub
+
+### Containerization
+
+* Docker
+* Docker Compose
+* Docker volumes
+* Docker networks
+
+---
 
 ## Project Architecture
 
 The application follows a layered backend architecture:
 
 ```text
+Client
+   ↓
 Controller
-    ↓
+   ↓
 Service
-    ↓
+   ↓
 Repository
-    ↓
+   ↓
 JPA / Hibernate
-    ↓
+   ↓
 PostgreSQL
 ```
 
-Security is handled through:
+### Security architecture
 
 ```text
 Client
@@ -174,19 +209,39 @@ Role-Based Authorization
 Controller
 ```
 
-### Main package structure
+### Docker architecture
+
+```text
+                    Docker Compose
+                          │
+             ┌────────────┴────────────┐
+             ↓                         ↓
+      Spring Boot                  PostgreSQL
+      Container                   Container
+      Port 8081                   Port 5432
+             │                         │
+             └──── Docker Network ─────┘
+                                       │
+                              Persistent Volume
+```
+
+---
+
+## Project Structure
 
 ```text
 com.nabin.employee_helpdesk
 │
 ├── config
 │   ├── JwtAuthFilter
+│   ├── OpenApiConfig
 │   └── SecurityConfig
 │
 ├── controller
 │   ├── AiController
 │   ├── AuthController
 │   ├── EmployeeController
+│   ├── HelloController
 │   ├── SupportAgentController
 │   └── TicketController
 │
@@ -200,6 +255,8 @@ com.nabin.employee_helpdesk
 │
 └── service
 ```
+
+---
 
 ## API Endpoints
 
@@ -240,7 +297,7 @@ PUT    /api/tickets/{id}
 DELETE /api/tickets/{id}
 ```
 
-Tickets can also be filtered using status and priority.
+Tickets can also be filtered by status and priority.
 
 ### AI
 
@@ -250,19 +307,39 @@ POST /api/ai/approve/{ticketId}
 POST /api/ai/reject/{ticketId}
 ```
 
+---
+
+## Swagger / OpenAPI
+
+Swagger UI is available when the application is running:
+
+```text
+http://localhost:8081/swagger-ui/index.html
+```
+
+OpenAPI documentation:
+
+```text
+http://localhost:8081/v3/api-docs
+```
+
+JWT authentication can be configured in Swagger using the **Authorize** button.
+
+---
+
 ## Database Configuration
 
 The application uses PostgreSQL.
 
-Create a database named:
+For a local PostgreSQL installation, create:
 
 ```sql
 CREATE DATABASE employee_helpdesk;
 ```
 
-Database credentials are loaded through environment variables rather than being stored directly in the source code.
+Database credentials and the JWT secret are provided through environment variables.
 
-Example configuration:
+Example:
 
 ```properties
 spring.datasource.url=jdbc:postgresql://localhost:5432/employee_helpdesk
@@ -272,28 +349,34 @@ spring.datasource.password=${DB_PASSWORD}
 jwt.secret=${JWT_SECRET}
 ```
 
+> When running through Docker Compose, the Spring Boot container connects to PostgreSQL using the Docker service name `postgres`.
+
+---
+
 ## Environment Variables
 
-Before running the application, configure:
+Configure:
 
 ```text
 DB_PASSWORD=<your-postgresql-password>
 JWT_SECRET=<your-jwt-secret>
 ```
 
-Do not commit real passwords, API keys, or JWT secrets to GitHub.
+Do not commit real passwords, JWT secrets, API keys, or `.env` files to GitHub.
 
-## Running the Application
+---
+
+# Running Locally
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/NABINGAYAKH/employee-helpdesk.git
+git clone https://github.com/NABINGAYAKH/Employee-Helpdesk.git
 ```
 
-### 2. Open the project
+### 2. Configure PostgreSQL
 
-Open the project in IntelliJ IDEA or another Java IDE.
+Make sure PostgreSQL is running and the `employee_helpdesk` database exists.
 
 ### 3. Configure environment variables
 
@@ -304,11 +387,7 @@ DB_PASSWORD
 JWT_SECRET
 ```
 
-### 4. Start PostgreSQL
-
-Make sure PostgreSQL is running and the `employee_helpdesk` database exists.
-
-### 5. Run the application
+### 4. Run the application
 
 Using Maven:
 
@@ -322,39 +401,124 @@ The application runs on:
 http://localhost:8081
 ```
 
+---
+
+# Running with Docker
+
+The project includes a `Dockerfile` and `compose.yaml` for running the Spring Boot application and PostgreSQL together.
+
+### Start the application
+
+From the project root:
+
+```bash
+docker compose up -d --build
+```
+
+This starts:
+
+```text
+Spring Boot → localhost:8081
+PostgreSQL  → localhost:5433
+```
+
+### Check containers
+
+```bash
+docker compose ps
+```
+
+### View application logs
+
+```bash
+docker compose logs employee-helpdesk
+```
+
+### Stop containers
+
+```bash
+docker compose down
+```
+
+The PostgreSQL data is stored in a persistent Docker volume, so stopping/restarting the containers does not remove the database data.
+
+### Docker environment
+
+Docker Compose provides:
+
+* Spring Boot application container
+* PostgreSQL container
+* Docker network for container communication
+* Persistent PostgreSQL volume
+* Environment variable configuration
+
+---
+
 ## Testing
 
-The REST APIs can be tested using Postman.
+The project includes automated tests covering application functionality, security, authentication, ticket workflows, AI functionality, and service/controller behavior.
 
-The project includes Spring Boot test infrastructure and can be extended with unit and integration tests for services, security, ticket workflows, and AI analysis.
+Tests can be executed using the Maven wrapper:
+
+```bash
+./mvnw test
+```
+
+On Windows:
+
+```powershell
+.\mvnw.cmd test
+```
+
+The current test suite contains **91 passing tests**.
+
+---
 
 ## Future Improvements
 
-Planned improvements include:
-
-* Comprehensive automated testing
-* Swagger / OpenAPI documentation
-* Docker containerization
-* Cloud deployment
 * Integration with a production LLM provider
-* Improved AI ticket classification and recommendation
-* Additional monitoring and production-readiness improvements
+* More advanced AI ticket classification
+* Improved AI-generated solutions
+* Cloud deployment
+* Production monitoring and observability
+* CI/CD pipeline
+* Additional integration testing
+
+---
 
 ## Project Status
 
-The core backend functionality is implemented, including:
+The core backend is implemented and containerized.
+
+### Implemented
 
 * REST APIs
 * PostgreSQL persistence
-* Authentication
-* JWT security
+* JPA / Hibernate
+* JWT authentication
+* BCrypt password hashing
 * Role-based authorization
 * Ticket lifecycle management
-* Ticket ownership validation
+* Employee ticket ownership validation
 * AI-assisted ticket analysis
 * Human approval/rejection workflow
+* Global exception handling
+* Request validation
+* Swagger / OpenAPI documentation
+* Automated tests
+* Dockerfile
+* Docker Compose
+* Persistent PostgreSQL volume
+* Environment-based configuration
+* Git/GitHub version control
 
-The project is being further enhanced with testing, API documentation, containerization, and deployment.
+### Current AI implementation
+
+The AI functionality currently uses a mock analysis service to demonstrate the complete workflow without requiring a paid external LLM API.
+
+A future version can integrate a production LLM provider.
+
+---
 
 ## Author
 
