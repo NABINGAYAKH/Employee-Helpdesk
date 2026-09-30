@@ -7,6 +7,8 @@ import com.nabin.employee_helpdesk.exception.ResourceNotFoundException;
 import com.nabin.employee_helpdesk.repository.EmployeeRepository;
 import com.nabin.employee_helpdesk.repository.SupportAgentRepository;
 import com.nabin.employee_helpdesk.repository.TicketRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -19,6 +21,8 @@ import java.util.Optional;
 
 @Service
 public class TicketService {
+
+    private static final Logger log = LoggerFactory.getLogger(TicketService.class);
 
     @Autowired
     private TicketRepository ticketRepository;
@@ -36,15 +40,16 @@ public class TicketService {
         ticket.setStatus(request.getStatus());
         ticket.setPriority(request.getPriority());
 
-        Employee employee=employeeRepository
+        Employee employee = employeeRepository
                 .findById(request.getEmployeeId())
                 .orElse(null);
 
-        if(employee == null){
+        if (employee == null) {
             throw new ResourceNotFoundException(
-                    "Employee not found with id: "+request.getEmployeeId()
+                    "Employee not found with id: " + request.getEmployeeId()
             );
         }
+
         ticket.setEmployee(employee);
 
         SupportAgent supportAgent = supportAgentRepository
@@ -74,24 +79,30 @@ public class TicketService {
         return response;
     }
 
-    public List<TicketResponse> findAll(){
-        List<Ticket> tickets=ticketRepository.findAll();
+    public List<TicketResponse> findAll() {
+        List<Ticket> tickets = ticketRepository.findAll();
         List<TicketResponse> responses = new ArrayList<>();
-        for(Ticket ticket : tickets) {
+
+        for (Ticket ticket : tickets) {
             TicketResponse response = new TicketResponse();
+
             response.setId(ticket.getId());
             response.setTitle(ticket.getTitle());
             response.setDescription(ticket.getDescription());
             response.setStatus(ticket.getStatus());
             response.setPriority(ticket.getPriority());
-            if(ticket.getEmployee()!=null){
+
+            if (ticket.getEmployee() != null) {
                 response.setEmployeeId(ticket.getEmployee().getId());
             }
+
             if (ticket.getSupportAgent() != null) {
                 response.setSupportAgentId(ticket.getSupportAgent().getId());
             }
+
             responses.add(response);
         }
+
         return responses;
     }
 
@@ -108,7 +119,8 @@ public class TicketService {
 
         if (ticket.isEmpty()) {
             throw new ResourceNotFoundException(
-                    "Ticket not found with id: " + id);
+                    "Ticket not found with id: " + id
+            );
         }
 
         // Check whether the logged-in user is an EMPLOYEE
@@ -124,7 +136,8 @@ public class TicketService {
                     || !ticket.get().getEmployee().getId().equals(employee.getId())) {
 
                 throw new AccessDeniedException(
-                        "You are not allowed to access this ticket");
+                        "You are not allowed to access this ticket"
+                );
             }
         }
 
@@ -138,12 +151,14 @@ public class TicketService {
 
         if (ticket.get().getEmployee() != null) {
             response.setEmployeeId(
-                    ticket.get().getEmployee().getId());
+                    ticket.get().getEmployee().getId()
+            );
         }
 
         if (ticket.get().getSupportAgent() != null) {
             response.setSupportAgentId(
-                    ticket.get().getSupportAgent().getId());
+                    ticket.get().getSupportAgent().getId()
+            );
         }
 
         return response;
@@ -155,32 +170,52 @@ public class TicketService {
 
         if (ticket.isEmpty()) {
             throw new ResourceNotFoundException(
-                    "Ticket not found with id: " + id);
+                    "Ticket not found with id: " + id
+            );
         }
 
         return ticket.get();
     }
 
-    public TicketResponse updateTicket(int id, TicketRequest request){
-        Ticket existingTicket =ticketRepository.findById(id).orElse(null);
-        if(existingTicket!=null){
+    public TicketResponse updateTicket(int id, TicketRequest request) {
+
+        Ticket existingTicket = ticketRepository.findById(id).orElse(null);
+
+        if (existingTicket != null) {
+
             existingTicket.setTitle(request.getTitle());
-            System.out.println("Current Status: " + existingTicket.getStatus());
-            System.out.println("New Status: " + request.getStatus());
+
+            log.debug(
+                    "Current ticket status: {}",
+                    existingTicket.getStatus()
+            );
+
+            log.debug(
+                    "Requested ticket status: {}",
+                    request.getStatus()
+            );
+
             validateStatusTransition(
                     existingTicket.getStatus(),
                     request.getStatus()
             );
+
             existingTicket.setStatus(request.getStatus());
             existingTicket.setDescription(request.getDescription());
             existingTicket.setPriority(request.getPriority());
-            Employee employee = employeeRepository.findById(request.getEmployeeId()).orElse(null);
+
+            Employee employee = employeeRepository
+                    .findById(request.getEmployeeId())
+                    .orElse(null);
+
             if (employee == null) {
                 throw new ResourceNotFoundException(
                         "Employee not found with id: " + request.getEmployeeId()
                 );
             }
+
             existingTicket.setEmployee(employee);
+
             SupportAgent supportAgent = supportAgentRepository
                     .findById(request.getSupportAgentId())
                     .orElse(null);
@@ -190,10 +225,13 @@ public class TicketService {
                         "Support agent not found with id: " + request.getSupportAgentId()
                 );
             }
+
             existingTicket.setSupportAgent(supportAgent);
+
             Ticket savedTicket = ticketRepository.save(existingTicket);
 
             TicketResponse response = new TicketResponse();
+
             response.setId(savedTicket.getId());
             response.setTitle(savedTicket.getTitle());
             response.setStatus(savedTicket.getStatus());
@@ -201,11 +239,14 @@ public class TicketService {
             response.setPriority(savedTicket.getPriority());
             response.setEmployeeId(savedTicket.getEmployee().getId());
             response.setSupportAgentId(savedTicket.getSupportAgent().getId());
+
             return response;
         }
-        throw new ResourceNotFoundException("Ticket not found with id: "+id);
-    }
 
+        throw new ResourceNotFoundException(
+                "Ticket not found with id: " + id
+        );
+    }
 
     private void validateStatusTransition(
             TicketStatus currentStatus,
@@ -247,83 +288,105 @@ public class TicketService {
         }
     }
 
+    public void deleteById(int id) {
 
-    public void deleteById(int id){
-        if(ticketRepository.existsById(id)){
+        if (ticketRepository.existsById(id)) {
             ticketRepository.deleteById(id);
-        }else{
-            throw new ResourceNotFoundException("Ticket not found with id: "+id);
+        } else {
+            throw new ResourceNotFoundException(
+                    "Ticket not found with id: " + id
+            );
         }
     }
 
-    public List<TicketResponse> findByStatus(TicketStatus status){
+    public List<TicketResponse> findByStatus(TicketStatus status) {
+
         List<Ticket> tickets = ticketRepository.findByStatus(status);
         List<TicketResponse> responses = new ArrayList<>();
 
-        for(Ticket ticket:tickets){
-            TicketResponse response = new TicketResponse();
-            response.setId(ticket.getId());
-            response.setTitle(ticket.getTitle());
-            response.setStatus(ticket.getStatus());
-            response.setDescription(ticket.getDescription());
-            response.setPriority(ticket.getPriority());
-            if(ticket.getEmployee()!=null){
-                response.setEmployeeId(ticket.getEmployee().getId());
-            }
-            if (ticket.getSupportAgent() != null) {
-                response.setSupportAgentId(ticket.getSupportAgent().getId());
-            }
-            responses.add(response);
-        }
-    return responses;
-    }
+        for (Ticket ticket : tickets) {
 
-    public List<TicketResponse> findByPriority(TicketPriority priority){
-        List<Ticket> tickets =ticketRepository.findByPriority(priority);
-        List<TicketResponse> responses = new ArrayList<>();
-
-        for(Ticket ticket:tickets){
             TicketResponse response = new TicketResponse();
+
             response.setId(ticket.getId());
             response.setTitle(ticket.getTitle());
             response.setStatus(ticket.getStatus());
             response.setDescription(ticket.getDescription());
             response.setPriority(ticket.getPriority());
 
-            if(ticket.getEmployee()!=null){
+            if (ticket.getEmployee() != null) {
                 response.setEmployeeId(ticket.getEmployee().getId());
             }
+
             if (ticket.getSupportAgent() != null) {
                 response.setSupportAgentId(ticket.getSupportAgent().getId());
             }
 
             responses.add(response);
         }
+
         return responses;
     }
 
-    public List<TicketResponse> findByStatusAndPriority(TicketStatus status, TicketPriority priority){
-        List<Ticket> tickets = ticketRepository.findByStatusAndPriority(status, priority);
+    public List<TicketResponse> findByPriority(TicketPriority priority) {
 
+        List<Ticket> tickets = ticketRepository.findByPriority(priority);
         List<TicketResponse> responses = new ArrayList<>();
 
-        for(Ticket ticket:tickets){
+        for (Ticket ticket : tickets) {
+
             TicketResponse response = new TicketResponse();
+
             response.setId(ticket.getId());
             response.setTitle(ticket.getTitle());
             response.setStatus(ticket.getStatus());
             response.setDescription(ticket.getDescription());
             response.setPriority(ticket.getPriority());
 
-            if(ticket.getEmployee()!=null){
+            if (ticket.getEmployee() != null) {
                 response.setEmployeeId(ticket.getEmployee().getId());
             }
+
             if (ticket.getSupportAgent() != null) {
                 response.setSupportAgentId(ticket.getSupportAgent().getId());
             }
 
             responses.add(response);
         }
+
+        return responses;
+    }
+
+    public List<TicketResponse> findByStatusAndPriority(
+            TicketStatus status,
+            TicketPriority priority) {
+
+        List<Ticket> tickets =
+                ticketRepository.findByStatusAndPriority(status, priority);
+
+        List<TicketResponse> responses = new ArrayList<>();
+
+        for (Ticket ticket : tickets) {
+
+            TicketResponse response = new TicketResponse();
+
+            response.setId(ticket.getId());
+            response.setTitle(ticket.getTitle());
+            response.setStatus(ticket.getStatus());
+            response.setDescription(ticket.getDescription());
+            response.setPriority(ticket.getPriority());
+
+            if (ticket.getEmployee() != null) {
+                response.setEmployeeId(ticket.getEmployee().getId());
+            }
+
+            if (ticket.getSupportAgent() != null) {
+                response.setSupportAgentId(ticket.getSupportAgent().getId());
+            }
+
+            responses.add(response);
+        }
+
         return responses;
     }
 }

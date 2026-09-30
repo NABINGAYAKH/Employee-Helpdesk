@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> handleHttpMessageNotReadableException( HttpMessageNotReadableException ex){
-        System.out.println(ex.getCause());
+
         return new ResponseEntity<>(
                 new ErrorResponse("Invalid request"),
                 HttpStatus.BAD_REQUEST
