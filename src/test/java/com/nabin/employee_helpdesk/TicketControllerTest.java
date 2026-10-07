@@ -14,6 +14,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -75,28 +79,36 @@ class TicketControllerTest {
                 )
         );
 
-        when(ticketService.findAll())
-                .thenReturn(tickets);
+        Page<TicketResponse> page =
+                new PageImpl<>(
+                        tickets,
+                        PageRequest.of(0, 2),
+                        tickets.size()
+                );
+
+        when(ticketService.findAll(any(Pageable.class)))
+                .thenReturn(page);
 
         mockMvc.perform(
                         get("/api/tickets")
+                                .param("page", "0")
+                                .param("size", "2")
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].title")
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].title")
                         .value("VPN not working"))
-                .andExpect(jsonPath("$[0].description")
+                .andExpect(jsonPath("$.content[0].description")
                         .value("Unable to connect to VPN"))
-                .andExpect(jsonPath("$[0].status")
+                .andExpect(jsonPath("$.content[0].status")
                         .value("OPEN"))
-                .andExpect(jsonPath("$[0].priority")
+                .andExpect(jsonPath("$.content[0].priority")
                         .value("HIGH"))
-                .andExpect(jsonPath("$[0].employeeId")
+                .andExpect(jsonPath("$.content[0].employeeId")
                         .value(1))
-                .andExpect(jsonPath("$[0].supportAgentId")
+                .andExpect(jsonPath("$.content[0].supportAgentId")
                         .value(2))
-                .andExpect(jsonPath("$[1].id")
-                        .value(2));
+                .andExpect(jsonPath("$.content[1].id").value(2));
     }
 
 
@@ -354,16 +366,27 @@ class TicketControllerTest {
                 )
         );
 
-        when(ticketService.findByStatus(TicketStatus.OPEN))
-                .thenReturn(tickets);
+        Page<TicketResponse> page =
+                new PageImpl<>(
+                        tickets,
+                        PageRequest.of(0, 10),
+                        tickets.size()
+                );
+
+        when(ticketService.findByStatus(
+                eq(TicketStatus.OPEN),
+                any(Pageable.class)
+        )).thenReturn(page);
 
         mockMvc.perform(
                         get("/api/tickets")
                                 .param("status", "OPEN")
+                                .param("page", "0")
+                                .param("size", "10")
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].status")
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].status")
                         .value("OPEN"));
     }
 
@@ -384,16 +407,27 @@ class TicketControllerTest {
                 )
         );
 
-        when(ticketService.findByPriority(TicketPriority.HIGH))
-                .thenReturn(tickets);
+        Page<TicketResponse> page =
+                new PageImpl<>(
+                        tickets,
+                        PageRequest.of(0, 10),
+                        tickets.size()
+                );
+
+        when(ticketService.findByPriority(
+                eq(TicketPriority.HIGH),
+                any(Pageable.class)
+        )).thenReturn(page);
 
         mockMvc.perform(
                         get("/api/tickets")
                                 .param("priority", "HIGH")
+                                .param("page", "0")
+                                .param("size", "10")
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].priority")
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].priority")
                         .value("HIGH"));
     }
 
@@ -415,21 +449,31 @@ class TicketControllerTest {
                 )
         );
 
+        Page<TicketResponse> page =
+                new PageImpl<>(
+                        tickets,
+                        PageRequest.of(0, 10),
+                        tickets.size()
+                );
+
         when(ticketService.findByStatusAndPriority(
-                TicketStatus.OPEN,
-                TicketPriority.CRITICAL
-        )).thenReturn(tickets);
+                eq(TicketStatus.OPEN),
+                eq(TicketPriority.CRITICAL),
+                any(Pageable.class)
+        )).thenReturn(page);
 
         mockMvc.perform(
                         get("/api/tickets")
                                 .param("status", "OPEN")
                                 .param("priority", "CRITICAL")
+                                .param("page", "0")
+                                .param("size", "10")
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].status")
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].status")
                         .value("OPEN"))
-                .andExpect(jsonPath("$[0].priority")
+                .andExpect(jsonPath("$.content[0].priority")
                         .value("CRITICAL"));
     }
 

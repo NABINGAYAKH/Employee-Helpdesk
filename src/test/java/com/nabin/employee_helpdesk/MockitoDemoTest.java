@@ -11,12 +11,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,10 +32,10 @@ public class MockitoDemoTest {
     @InjectMocks
     EmployeeService employeeService;
 
-    @Test
-    void shouldFindEmployeeById(){
 
-        //Arrange
+    @Test
+    void shouldFindEmployeeById() {
+
         Employee employee = new Employee();
         employee.setId(1);
         employee.setName("Nabin");
@@ -41,43 +45,37 @@ public class MockitoDemoTest {
         when(employeeRepository.findById(1))
                 .thenReturn(Optional.of(employee));
 
-        //Act
-        EmployeeResponse response = employeeService.findById(1);
+        EmployeeResponse response =
+                employeeService.findById(1);
 
-        //Assert
         assertNotNull(response);
         assertEquals(1, response.getId());
         assertEquals("Nabin", response.getName());
         assertEquals("nabin@gmail.com", response.getEmail());
         assertEquals("IT", response.getDepartment());
 
-        //Verify
         verify(employeeRepository).findById(1);
     }
 
 
     @Test
-    void shouldThrowExceptionWhenEmployeeNotFound(){
+    void shouldThrowExceptionWhenEmployeeNotFound() {
 
-        //Arrange
         when(employeeRepository.findById(999))
                 .thenReturn(Optional.empty());
 
-        //Act + Assert
-        assertThrows(ResourceNotFoundException.class,
+        assertThrows(
+                ResourceNotFoundException.class,
                 () -> employeeService.findById(999)
         );
 
-        //Verify
         verify(employeeRepository).findById(999);
-
     }
 
 
     @Test
-    void shouldSaveEmployee(){
+    void shouldSaveEmployee() {
 
-        //Arrange
         EmployeeRequest request = new EmployeeRequest();
         request.setName("Nabin");
         request.setEmail("nabin@gmail.com");
@@ -92,53 +90,54 @@ public class MockitoDemoTest {
         when(employeeRepository.save(any(Employee.class)))
                 .thenReturn(savedEmployee);
 
-        //Act
-        EmployeeResponse response = employeeService.save(request);
+        EmployeeResponse response =
+                employeeService.save(request);
 
-        //Assert
         assertNotNull(response);
         assertEquals(1, response.getId());
         assertEquals("Nabin", response.getName());
         assertEquals("nabin@gmail.com", response.getEmail());
         assertEquals("IT", response.getDepartment());
 
-        //Verify
-        verify(employeeRepository).save(any(Employee.class));
+        verify(employeeRepository)
+                .save(any(Employee.class));
     }
 
+
     @Test
-    void shouldDeleteEmployee(){
-        //Arrange
+    void shouldDeleteEmployee() {
+
         when(employeeRepository.existsById(1))
                 .thenReturn(true);
 
-        //Act
         employeeService.deleteById(1);
 
-        //Verify
         verify(employeeRepository).existsById(1);
         verify(employeeRepository).deleteById(1);
     }
 
+
     @Test
-    void shouldThrowExceptionWhenDeletingNonExistingEmployee(){
-        //Arrange
+    void shouldThrowExceptionWhenDeletingNonExistingEmployee() {
+
         when(employeeRepository.existsById(999))
                 .thenReturn(false);
 
-        //Act+Assert
-        assertThrows(ResourceNotFoundException.class,
+        assertThrows(
+                ResourceNotFoundException.class,
                 () -> employeeService.deleteById(999)
         );
 
-        //Verify
         verify(employeeRepository).existsById(999);
-        verify(employeeRepository, never()).deleteById(999);
+
+        verify(employeeRepository, never())
+                .deleteById(999);
     }
 
+
     @Test
-    void shouldUpdateEmployee(){
-        //Arrange
+    void shouldUpdateEmployee() {
+
         Employee existingEmployee = new Employee();
         existingEmployee.setId(1);
         existingEmployee.setName("Old Name");
@@ -162,26 +161,23 @@ public class MockitoDemoTest {
         when(employeeRepository.save(existingEmployee))
                 .thenReturn(updatedEmployee);
 
-        //Act
+        EmployeeResponse response =
+                employeeService.updateEmployee(1, request);
 
-        EmployeeResponse response = employeeService.updateEmployee(1, request);
-
-        // Assert
         assertNotNull(response);
         assertEquals(1, response.getId());
         assertEquals("Nabin", response.getName());
         assertEquals("nabin@gmail.com", response.getEmail());
         assertEquals("IT", response.getDepartment());
 
-        // Verify
         verify(employeeRepository).findById(1);
         verify(employeeRepository).save(existingEmployee);
     }
 
+
     @Test
     void shouldThrowExceptionWhenUpdatingNonExistingEmployee() {
 
-        // Arrange
         EmployeeRequest request = new EmployeeRequest();
         request.setName("Nabin");
         request.setEmail("nabin@gmail.com");
@@ -190,21 +186,21 @@ public class MockitoDemoTest {
         when(employeeRepository.findById(999))
                 .thenReturn(Optional.empty());
 
-        // Act + Assert
         assertThrows(
                 ResourceNotFoundException.class,
                 () -> employeeService.updateEmployee(999, request)
         );
 
-        // Verify
         verify(employeeRepository).findById(999);
-        verify(employeeRepository, never()).save(any(Employee.class));
+
+        verify(employeeRepository, never())
+                .save(any(Employee.class));
     }
+
 
     @Test
     void shouldFindAllEmployees() {
 
-        // Arrange
         Employee employee1 = new Employee();
         employee1.setId(1);
         employee1.setName("Nabin");
@@ -217,23 +213,35 @@ public class MockitoDemoTest {
         employee2.setEmail("john@gmail.com");
         employee2.setDepartment("HR");
 
-        when(employeeRepository.findAll())
-                .thenReturn(List.of(employee1, employee2));
+        Page<Employee> employeePage =
+                new PageImpl<>(
+                        List.of(employee1, employee2),
+                        PageRequest.of(0, 10),
+                        2
+                );
 
-        // Act
-        List<EmployeeResponse> responses = employeeService.findAll();
+        when(employeeRepository.findAll(any(Pageable.class)))
+                .thenReturn(employeePage);
 
-        // Assert
+        Page<EmployeeResponse> responses =
+                employeeService.findAll(PageRequest.of(0, 10));
+
         assertNotNull(responses);
-        assertEquals(2, responses.size());
+        assertEquals(2, responses.getContent().size());
 
-        assertEquals(1, responses.get(0).getId());
-        assertEquals("Nabin", responses.get(0).getName());
+        assertEquals(1, responses.getContent().get(0).getId());
+        assertEquals(
+                "Nabin",
+                responses.getContent().get(0).getName()
+        );
 
-        assertEquals(2, responses.get(1).getId());
-        assertEquals("John", responses.get(1).getName());
+        assertEquals(2, responses.getContent().get(1).getId());
+        assertEquals(
+                "John",
+                responses.getContent().get(1).getName()
+        );
 
-        // Verify
-        verify(employeeRepository).findAll();
+        verify(employeeRepository)
+                .findAll(any(Pageable.class));
     }
 }

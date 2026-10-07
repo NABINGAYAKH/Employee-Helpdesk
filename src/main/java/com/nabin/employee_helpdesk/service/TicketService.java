@@ -14,9 +14,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -79,13 +79,10 @@ public class TicketService {
         return response;
     }
 
-    public List<TicketResponse> findAll() {
-        List<Ticket> tickets = ticketRepository.findAll();
-        List<TicketResponse> responses = new ArrayList<>();
-
-        for (Ticket ticket : tickets) {
+    public Page<TicketResponse> findAll(Pageable pageable) {
+        Page<Ticket> tickets = ticketRepository.findAll(pageable);
+        return tickets.map(ticket -> {
             TicketResponse response = new TicketResponse();
-
             response.setId(ticket.getId());
             response.setTitle(ticket.getTitle());
             response.setDescription(ticket.getDescription());
@@ -100,10 +97,8 @@ public class TicketService {
                 response.setSupportAgentId(ticket.getSupportAgent().getId());
             }
 
-            responses.add(response);
-        }
-
-        return responses;
+            return response;
+        });
     }
 
     public TicketResponse findById(int id) {
@@ -299,41 +294,11 @@ public class TicketService {
         }
     }
 
-    public List<TicketResponse> findByStatus(TicketStatus status) {
+    public Page<TicketResponse> findByStatus(TicketStatus status, Pageable pageable) {
 
-        List<Ticket> tickets = ticketRepository.findByStatus(status);
-        List<TicketResponse> responses = new ArrayList<>();
+        Page<Ticket> tickets = ticketRepository.findByStatus(status, pageable);
 
-        for (Ticket ticket : tickets) {
-
-            TicketResponse response = new TicketResponse();
-
-            response.setId(ticket.getId());
-            response.setTitle(ticket.getTitle());
-            response.setStatus(ticket.getStatus());
-            response.setDescription(ticket.getDescription());
-            response.setPriority(ticket.getPriority());
-
-            if (ticket.getEmployee() != null) {
-                response.setEmployeeId(ticket.getEmployee().getId());
-            }
-
-            if (ticket.getSupportAgent() != null) {
-                response.setSupportAgentId(ticket.getSupportAgent().getId());
-            }
-
-            responses.add(response);
-        }
-
-        return responses;
-    }
-
-    public List<TicketResponse> findByPriority(TicketPriority priority) {
-
-        List<Ticket> tickets = ticketRepository.findByPriority(priority);
-        List<TicketResponse> responses = new ArrayList<>();
-
-        for (Ticket ticket : tickets) {
+        return tickets.map(ticket -> {
 
             TicketResponse response = new TicketResponse();
 
@@ -351,22 +316,46 @@ public class TicketService {
                 response.setSupportAgentId(ticket.getSupportAgent().getId());
             }
 
-            responses.add(response);
-        }
+            return response;
+        });
 
-        return responses;
     }
 
-    public List<TicketResponse> findByStatusAndPriority(
+    public Page<TicketResponse> findByPriority(TicketPriority priority, Pageable pageable) {
+
+        Page<Ticket> tickets = ticketRepository.findByPriority(priority, pageable);
+
+
+        return tickets.map(ticket -> {
+
+            TicketResponse response = new TicketResponse();
+
+            response.setId(ticket.getId());
+            response.setTitle(ticket.getTitle());
+            response.setStatus(ticket.getStatus());
+            response.setDescription(ticket.getDescription());
+            response.setPriority(ticket.getPriority());
+
+            if (ticket.getEmployee() != null) {
+                response.setEmployeeId(ticket.getEmployee().getId());
+            }
+
+            if (ticket.getSupportAgent() != null) {
+                response.setSupportAgentId(ticket.getSupportAgent().getId());
+            }
+
+            return response;
+        });
+    }
+
+    public Page<TicketResponse> findByStatusAndPriority(
             TicketStatus status,
-            TicketPriority priority) {
+            TicketPriority priority, Pageable pageable) {
 
-        List<Ticket> tickets =
-                ticketRepository.findByStatusAndPriority(status, priority);
+        Page<Ticket> tickets =
+                ticketRepository.findByStatusAndPriority(status, priority, pageable);
 
-        List<TicketResponse> responses = new ArrayList<>();
-
-        for (Ticket ticket : tickets) {
+        return tickets.map(ticket -> {
 
             TicketResponse response = new TicketResponse();
 
@@ -384,9 +373,7 @@ public class TicketService {
                 response.setSupportAgentId(ticket.getSupportAgent().getId());
             }
 
-            responses.add(response);
-        }
-
-        return responses;
+            return response;
+        });
     }
 }

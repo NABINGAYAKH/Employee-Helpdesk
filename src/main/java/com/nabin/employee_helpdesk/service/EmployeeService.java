@@ -6,10 +6,10 @@ import com.nabin.employee_helpdesk.entity.Employee;
 import com.nabin.employee_helpdesk.exception.ResourceNotFoundException;
 import com.nabin.employee_helpdesk.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -18,21 +18,19 @@ public class EmployeeService {
     @Autowired
     private EmployeeRepository employeeRepository;
 
-    public List<EmployeeResponse> findAll() {
-        List<Employee> employees = employeeRepository.findAll();
-        List<EmployeeResponse> responses = new ArrayList<>();
+    public Page<EmployeeResponse> findAll(Pageable pageable) {
+        Page<Employee> employees = employeeRepository.findAll(pageable);
 
-        for(Employee employee : employees){
+        return employees.map(employee -> {
             EmployeeResponse response = new EmployeeResponse();
             response.setId(employee.getId());
             response.setName(employee.getName());
             response.setEmail(employee.getEmail());
             response.setDepartment(employee.getDepartment());
-
-            responses.add(response);
-        }
-        return responses;
+            return response;
+        });
     }
+
     public EmployeeResponse findById(int id) {
         Optional<Employee> employee = employeeRepository.findById(id);
 

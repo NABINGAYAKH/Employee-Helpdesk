@@ -10,11 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Tag(
         name = "Tickets",
@@ -54,22 +55,22 @@ public class TicketController {
             @ApiResponse(responseCode = "401", description = "Authentication required")
     })
     @GetMapping("/api/tickets")
-    public List<TicketResponse> getTickets(
-            @RequestParam(required = false) TicketStatus status, @RequestParam(required = false) TicketPriority priority) {
+    public Page<TicketResponse> getTickets(
+            @RequestParam(required = false) TicketStatus status, @RequestParam(required = false) TicketPriority priority, Pageable pageable) {
 
         if( status != null && priority != null){
-            return ticketService.findByStatusAndPriority(status, priority);
+            return ticketService.findByStatusAndPriority(status, priority, pageable);
         }
 
         if (status != null) {
-            return ticketService.findByStatus(status);
+            return ticketService.findByStatus(status, pageable);
         }
 
         if( priority != null){
-            return ticketService.findByPriority(priority);
+            return ticketService.findByPriority(priority, pageable);
         }
 
-        return ticketService.findAll();
+        return ticketService.findAll(pageable);
     }
 
 

@@ -13,6 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -59,18 +63,28 @@ class EmployeeControllerTest {
                 )
         );
 
-        when(employeeService.findAll())
-                .thenReturn(employees);
+        Page<EmployeeResponse> employeePage =
+                new PageImpl<>(employees);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(employeeService.findAll(any(Pageable.class)))
+                .thenReturn(employeePage);
 
         mockMvc.perform(
                         get("/api/employees")
+                                .param("page", "0")
+                                .param("size", "10")
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].name").value("Nabin"))
-                .andExpect(jsonPath("$[0].email").value("nabin@gmail.com"))
-                .andExpect(jsonPath("$[0].department").value("IT"))
-                .andExpect(jsonPath("$[1].id").value(2));
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].name").value("Nabin"))
+                .andExpect(jsonPath("$.content[0].email").value("nabin@gmail.com"))
+                .andExpect(jsonPath("$.content[0].department").value("IT"))
+                .andExpect(jsonPath("$.content[1].id").value(2))
+                .andExpect(jsonPath("$.content[1].name").value("Rahul"))
+                .andExpect(jsonPath("$.content[1].email").value("rahul@gmail.com"))
+                .andExpect(jsonPath("$.content[1].department").value("HR"));
     }
 
     @Test

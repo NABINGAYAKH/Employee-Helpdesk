@@ -154,8 +154,9 @@ Protected endpoints are secured using Spring Security role-based authorization.
 
 ### Testing
 
-* JUnit
+* JUnit5
 * Mockito
+* MockMvc
 * Spring Boot Test
 
 ### Development & Tools
@@ -470,7 +471,13 @@ On Windows:
 .\mvnw.cmd test
 ```
 
-The current test suite contains **91 passing tests**.
+### Current Test Status
+
+**86 tests passed**
+
+The current test suite contains **86 passing tests**.
+
+The test suite includes coverage for authentication, security, JWT functionality, employee operations, ticket services/controllers, AI functionality, and application components.
 
 ---
 
@@ -524,6 +531,6 @@ A future version can integrate a production LLM provider.
 
 **Nabin Gayak H**
 
-Java Backend Developer | Spring Boot
+Java Developer | Backend Development | Spring Boot
 
 GitHub: `https://github.com/NABINGAYAKH`
